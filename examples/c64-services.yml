@@ -1,0 +1,80 @@
+# C64 BASIC Services Configuration
+
+# Global default timeout (optional, defaults to 5 seconds)
+timeout: 10
+
+# Show service list at / (optional, defaults to false)
+# Set to true to expose the endpoint index at /
+show_service_list: true
+
+services:
+  - path: /hello
+    program: hello.bas
+    
+  - path: /add
+    program: add.bas
+    params:
+      - query: a
+        var: A
+        type: float
+      - query: b
+        var: B
+        type: float
+  
+  - path: /greet
+    program: greet.bas
+    params:
+      - query: name
+        var: N
+        type: string
+      - query: title
+        var: T
+        type: string
+        default: ""
+  
+  - path: /calc
+    program: calc.bas
+    params:
+      - query: x
+        var: X
+        type: float
+      - query: y
+        var: Y
+        type: float
+      - query: op
+        var: O
+        type: string
+  
+  - path: /timeout-test
+    program: timeout-test.bas
+    timeout: 2  # Override: only 2 seconds for this endpoint
+  
+  - path: /luhn
+    program: luhn.bas
+    params:
+      - query: number
+        var: N
+        type: string
+    output_type: boolean
+    catch_errors: true
+  
+  - path: /fibonacci
+    program: fibonacci.bas
+    params:
+      - query: n
+        var: N
+        type: int
+    output_type: integer
+    catch_errors: true
+  
+  - path: /prime
+    program: prime.bas
+    params:
+      - query: n
+        var: N
+        type: int
+    output_type: boolean
+    catch_errors: true
+
+  - path: /maze
+    program: maze.bas

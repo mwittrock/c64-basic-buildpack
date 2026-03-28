@@ -1,0 +1,6 @@
+---
+applications:
+  - name: c64-basic-examples
+    memory: 256M
+    instances: 1
+    buildpack: https://github.com/mwittrock/c64-basic-buildpack.git

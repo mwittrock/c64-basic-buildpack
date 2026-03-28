@@ -1,0 +1,55 @@
+#!/bin/bash
+# bin/compile - Single buildpack mode
+set -e  # Exit on error
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+BP_DIR=$(cd $(dirname $0)/.. && pwd)
+
+echo "-----> Installing C64 BASIC Runtime"
+
+# Install Python from Cloud Foundry buildpack dependencies
+PYTHON_VERSION="3.11.14"
+STACK="cflinuxfs4"
+PYTHON_URL="https://buildpacks.cloudfoundry.org/dependencies/python/python_${PYTHON_VERSION}_linux_x64_${STACK}_5d0a9d8b.tgz"
+
+echo "-----> Installing Python ${PYTHON_VERSION}"
+PYTHON_HOME="${BUILD_DIR}/python"
+
+# Use cache if available
+if [ ! -d "${CACHE_DIR}/python-${PYTHON_VERSION}" ]; then
+  echo "       Downloading Python..."
+  mkdir -p "${CACHE_DIR}/python-${PYTHON_VERSION}"
+  curl -sL "${PYTHON_URL}" | tar xz -C "${CACHE_DIR}/python-${PYTHON_VERSION}"
+fi
+
+echo "       Installing Python to app..."
+mkdir -p "${PYTHON_HOME}"
+cp -r "${CACHE_DIR}/python-${PYTHON_VERSION}"/* "${PYTHON_HOME}/"
+
+# Add Python to PATH for this script
+export PATH="${PYTHON_HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${PYTHON_HOME}/lib:${LD_LIBRARY_PATH}"
+
+# Copy bridge server
+echo "-----> Installing HTTP bridge server"
+cp -r $BP_DIR/bridge $BUILD_DIR/
+
+# Install Python dependencies
+if [ -f "$BP_DIR/bridge/requirements.txt" ]; then
+  echo "-----> Installing Python dependencies"
+  python3 -m pip install --quiet --upgrade pip
+  python3 -m pip install --quiet -r $BP_DIR/bridge/requirements.txt
+fi
+
+# Create runtime environment setup
+mkdir -p $BUILD_DIR/.profile.d
+
+cat > $BUILD_DIR/.profile.d/python.sh <<'EOF'
+export PATH="$HOME/python/bin:$PATH"
+export LD_LIBRARY_PATH="$HOME/python/lib:${LD_LIBRARY_PATH}"
+EOF
+
+echo "-----> C64 BASIC buildpack installation complete"
+echo "       Programs found:"
+ls -1 $BUILD_DIR/*.bas 2>/dev/null | sed 's/^/       - /' || echo "       (no .bas files found)"

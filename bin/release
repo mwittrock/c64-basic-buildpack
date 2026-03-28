@@ -1,0 +1,8 @@
+#!/bin/bash
+# bin/release - Specifies how to start the application
+
+cat << EOF
+---
+default_process_types:
+  web: python bridge/server.py
+EOF

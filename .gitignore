@@ -1,0 +1,4 @@
+# Ignore Claude Code files and folders.
+
+CLAUDE.md
+.claude/

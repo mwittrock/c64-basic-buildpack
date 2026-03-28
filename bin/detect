@@ -1,0 +1,11 @@
+#!/bin/bash
+# bin/detect - Determines if this buildpack should be used
+
+BUILD_DIR=$1
+
+if [ -f "$BUILD_DIR/c64-services.yml" ]; then
+  echo "C64-BASIC"
+  exit 0
+else
+  exit 1
+fi
