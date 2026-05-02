@@ -34,8 +34,8 @@ _PETSCII_TO_CHAR: dict[int, str] = {
     96:  '\u2500',  # ─
     **{i: chr(i) for i in range(97, 128)},  # lowercase / graphics (best-effort)
     160: ' ',       # shifted space
-    205: '/',       # SHIFT+M  ╱
-    206: '\\',      # SHIFT+N  ╲
+    205: '╱',  # ╱ SHIFT+M
+    206: '╲',  # ╲ SHIFT+N
 }
 
 _CHAR_TO_PETSCII: dict[str, int] = {v: k for k, v in _PETSCII_TO_CHAR.items()}

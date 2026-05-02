@@ -198,8 +198,8 @@ def test_string_functions():
 """
     output = run_basic_program(source)
     print(f"CHR$ PETSCII maze output: {repr(output)}")
-    assert "/" in output, f"CHR$(205) should produce '/' but got: {repr(output)}"
-    assert "\\" in output, f"CHR$(206) should produce '\\' but got: {repr(output)}"
+    assert "╱" in output, f"CHR$(205) should produce '╱' but got: {repr(output)}"
+    assert "╲" in output, f"CHR$(206) should produce '╲' but got: {repr(output)}"
     
     # STR$ and VAL
     source = """
