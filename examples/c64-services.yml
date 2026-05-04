@@ -78,3 +78,6 @@ services:
 
   - path: /maze
     program: maze.bas
+
+  - path: /maze-one-liner
+    program: maze-one-liner.bas
