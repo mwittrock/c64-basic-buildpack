@@ -434,6 +434,9 @@ class Lexer:
                     tokens.append(Token(TokenType.GE, '>=', self.line, self.column - 2))
                 else:
                     tokens.append(Token(TokenType.GT, '>', self.line, self.column - 1))
+            elif char == '?':
+                tokens.append(Token(TokenType.PRINT, '?', self.line, self.column))
+                self.advance()
             else:
                 raise BasicError(f"Unexpected character '{char}' at line {self.line}, column {self.column}")
         
@@ -1115,6 +1118,7 @@ class Interpreter:
         
         # FOR loop stack
         self.for_stack: List[Dict] = []
+        self.current_stmt_idx: int = 0
         
         # GOSUB/RETURN stack
         self.return_stack: List[int] = []
@@ -1144,7 +1148,9 @@ class Interpreter:
         
         # Collect all DATA statements first
         self._collect_data()
-        
+
+        start_stmt_idx = 0  # Resume point within a line (for same-line FOR/NEXT)
+
         # Execute program
         while self.pc < len(self.line_order):
             self._check_timeout()
@@ -1153,11 +1159,14 @@ class Interpreter:
             statements = self.program[line_num]
             
             pc_changed = False  # Track if PC was changed by GOTO/GOSUB
-            
-            for stmt in statements:
+
+            for i, stmt in enumerate(statements):
+                if i < start_stmt_idx:
+                    continue
+                self.current_stmt_idx = i
                 try:
                     result = self.execute_statement(stmt)
-                    
+
                     # Handle control flow
                     if result == 'END' or result == 'STOP':
                         return self.get_output()
@@ -1167,24 +1176,36 @@ class Interpreter:
                         if target_line in self.line_order:
                             self.pc = self.line_order.index(target_line)
                             pc_changed = True
+                            start_stmt_idx = 0
                         else:
                             raise BasicError(f"Line {target_line} not found")
                         break  # Skip remaining statements on this line
                     elif isinstance(result, tuple) and result[0] == 'NEXT_LOOP':
-                        # NEXT jumping back to FOR - PC already set, just break and let it increment
+                        resume_idx = result[1]
+                        if resume_idx >= len(statements):
+                            # FOR and NEXT are on different lines: advance past the FOR line
+                            self.pc += 1
+                            start_stmt_idx = 0
+                        else:
+                            # FOR and NEXT are on the same line: resume mid-line
+                            start_stmt_idx = resume_idx
+                        pc_changed = True
                         break
                     elif isinstance(result, tuple) and result[0] == 'RETURN':
                         if not self.return_stack:
                             raise BasicError("RETURN without GOSUB")
                         self.pc = self.return_stack.pop()
                         pc_changed = True
+                        start_stmt_idx = 0
                         break
-                
+
                 except BasicError as e:
                     raise BasicError(f"Line {line_num}: {e}")
                 except Exception as e:
                     raise BasicError(f"Line {line_num}: {type(e).__name__}: {e}")
-            
+            else:
+                start_stmt_idx = 0  # Completed line normally; reset for next line
+
             # Only increment PC if it wasn't changed by a control flow statement
             if not pc_changed:
                 self.pc += 1
@@ -1300,13 +1321,14 @@ class Interpreter:
                 self.variables[stmt.var_name] = start_val
             
             # Push loop info onto stack
-            # Store current PC (the FOR line) - NEXT will jump back here and continue to next line
+            # stmt_idx points to the statement after FOR so NEXT resumes the body,
+            # not the FOR initializer.
             self.for_stack.append({
                 'var': stmt.var_name,
                 'end': end_val,
                 'step': step_val,
                 'line': self.pc,
-                'for_statement': True  # Flag to indicate we should skip FOR re-execution
+                'stmt_idx': self.current_stmt_idx + 1,
             })
         
         elif isinstance(stmt, NextNode):
@@ -1331,10 +1353,8 @@ class Interpreter:
                 done = new_val < loop['end']
             
             if not done:
-                # Jump back to FOR line - set PC but DON'T prevent increment
-                # This allows execution to continue from the line after FOR
                 self.pc = loop['line']
-                return ('NEXT_LOOP',)  # Signal to break but still increment PC
+                return ('NEXT_LOOP', loop['stmt_idx'])
             else:
                 # Exit loop
                 self.for_stack.pop()

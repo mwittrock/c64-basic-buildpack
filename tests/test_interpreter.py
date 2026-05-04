@@ -118,6 +118,22 @@ def test_for_loop():
     print("✓ FOR/NEXT works!\n")
 
 
+def test_for_loop_same_line():
+    """Test FOR/NEXT on the same line (colon-separated statements)"""
+    print("Testing same-line FOR/NEXT...")
+
+    # Nested loops on a single line — the classic one-liner pattern
+    source = "10 FOR R=1 TO 3 : FOR C=1 TO 4 : PRINT \"X\"; : NEXT C : PRINT : NEXT R"
+    output = run_basic_program(source)
+    print(f"Output:\n{output}")
+    lines = [l for l in output.splitlines() if l.strip()]
+    assert len(lines) == 3, f"Expected 3 rows, got {len(lines)}: {output!r}"
+    for line in lines:
+        assert line.strip() == "XXXX", f"Expected 'XXXX', got {line!r}"
+
+    print("✓ Same-line FOR/NEXT works!\n")
+
+
 def test_gosub_return():
     """Test GOSUB/RETURN"""
     print("Testing GOSUB/RETURN...")
@@ -508,6 +524,22 @@ def test_data_read_restore():
     print("✓ DATA/READ/RESTORE work!\n")
 
 
+def test_print_abbreviation():
+    """Test that ? is accepted as an abbreviation for PRINT"""
+    print("Testing ? abbreviation for PRINT...")
+
+    source = '10 ? "HELLO"'
+    output = run_basic_program(source)
+    assert "HELLO" in output, f"Expected HELLO in output, got: {output!r}"
+
+    # ? with expression
+    source = "10 ? 1+1"
+    output = run_basic_program(source)
+    assert "2" in output, f"Expected 2 in output, got: {output!r}"
+
+    print("✓ ? abbreviation works!\n")
+
+
 def main():
     """Run all tests"""
     print("=" * 60)
@@ -522,6 +554,7 @@ def main():
         test_string_variables()
         test_if_then()
         test_for_loop()
+        test_for_loop_same_line()
         test_gosub_return()
         test_string_functions()
         test_math_functions()
@@ -530,6 +563,7 @@ def main():
         test_long_variable_names()
         test_variable_type_suffixes()
         test_data_read_restore()
+        test_print_abbreviation()
         
         print("=" * 60)
         print("All tests passed! ✓")

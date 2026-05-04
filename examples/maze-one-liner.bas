@@ -1,0 +1,1 @@
+10 FOR R=1 TO 25 : FOR C=1 TO 40 : ? CHR$(205.5+RND(1)); : NEXT C : ? : NEXT R
